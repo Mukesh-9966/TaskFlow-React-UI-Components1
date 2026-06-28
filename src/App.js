@@ -1,43 +1,68 @@
 import "./App.css";
+import { useMemo } from "react";
 
 import Navbar from "./components/Navbar/Navbar";
-import Button from "./components/Button/Button";
-import Card from "./components/Card/Card";
-import InputField from "./components/InputField/InputField";
-import Modal from "./components/Modal/Modal";
+import TaskForm from "./components/TaskForm/TaskForm";
+import TaskList from "./components/TaskList/TaskList";
+import Footer from "./components/Footer/Footer";
+
+import TaskContext from "./context/TaskContext";
+import useLocalStorage from "./hooks/useLocalStorage";
 
 function App() {
+  const [tasks, setTasks] = useLocalStorage("tasks", []);
+
+  const addTask = (text) => {
+    const newTask = {
+      id: Date.now(),
+      text,
+      completed: false,
+    };
+
+    setTasks([...tasks, newTask]);
+  };
+
+  const toggleTask = (id) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id
+          ? { ...task, completed: !task.completed }
+          : task
+      )
+    );
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const contextValue = useMemo(
+    () => ({
+      tasks,
+      addTask,
+      toggleTask,
+      deleteTask,
+    }),
+    [tasks]
+  );
+
   return (
-    <div>
-      <Navbar />
+    <TaskContext.Provider value={contextValue}>
+      <div className="App">
+        <Navbar />
+        <h2>Task Manager</h2>
 
-      <div style={{ padding: "20px" }}>
-        <h1>Reusable Components Demo</h1>
+        <TaskForm addTask={addTask} />
 
-        <InputField placeholder="Enter Task Name" />
-
-        <br />
-        <br />
-
-        <Button
-          text="Add Task"
-          onClick={() => alert("Task Added Successfully")}
+        <TaskList
+          tasks={tasks}
+          toggleTask={toggleTask}
+          deleteTask={deleteTask}
         />
 
-        <br />
-        <br />
-
-        <Card
-          title="React Internship Task"
-          description="Build reusable UI components using ReactJS."
-        />
-
-        <Modal show={true}>
-          <h3>Sample Modal</h3>
-          <p>This is a reusable modal component.</p>
-        </Modal>
+        <Footer tasks={tasks} />
       </div>
-    </div>
+    </TaskContext.Provider>
   );
 }
 
